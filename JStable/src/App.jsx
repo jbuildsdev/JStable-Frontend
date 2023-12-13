@@ -1,13 +1,10 @@
-import { ethers } from "ethers";
+import Web3 from "web3";
 import { useState } from "react";
-import { JSTB_ABI, JSTB_ADDRESS } from "./contracts/JStable";
 
 function App() {
   const [account, setAccount] = useState(null);
-  const [provider, setProvider] = useState(null);
-  const [contract, setContract] = useState(null);
-
-  console.log("ethers object:", ethers);
+  const [web3, setWeb3] = useState(null);
+  const [balance, setBalance] = useState(null);
 
   const connectToMetamask = async () => {
     console.log("Connecting to MetaMask...");
@@ -20,10 +17,6 @@ function App() {
         });
         console.log("Account access granted");
         setAccount(accounts[0]);
-        console.log("Account:", accounts[0]);
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        setProvider(provider);
-        console.log("Provider set:", provider);
       } catch (error) {
         console.error("Error occurred:", error);
       }
@@ -33,25 +26,36 @@ function App() {
     }
   };
 
-  const connectToContract = async () => {
-    console.log("Connecting to contract...");
-    if (provider) {
-      const signer = provider.getSigner();
-      console.log("Signer:", signer);
-      const contract = new ethers.Contract(JSTB_ADDRESS, JSTB_ABI, signer);
-      setContract(contract);
-      console.log("Contract connected:", contract);
+  const getWeb3 = async () => {
+    console.log("Getting Web3...");
+    if (window.ethereum) {
+      const web3 = new Web3(window.ethereum);
+      setWeb3(web3);
+      console.log("Web3 set:", web3);
     } else {
-      console.log("Provider is not set");
+      console.log(
+        "window.ethereum is not defined. Please connect to MetaMask first."
+      );
+    }
+  };
+
+  const getBalance = async () => {
+    if (web3 && account) {
+      const balance = await web3.eth.getBalance(account);
+      setBalance(web3.utils.fromWei(balance, "ether"));
+    } else {
+      console.log(
+        "Web3 or account is not initialized. Please connect to MetaMask and initialize Web3 first."
+      );
     }
   };
 
   return (
     <div>
       <button onClick={connectToMetamask}>Connect to MetaMask</button>
-      {account && (
-        <button onClick={connectToContract}>Connect to Contract</button>
-      )}
+      <button onClick={getWeb3}>Get Web3</button>
+      <button onClick={getBalance}>Get Balance</button>
+      {balance && <p>Your balance is {balance} ETH</p>}
     </div>
   );
 }
